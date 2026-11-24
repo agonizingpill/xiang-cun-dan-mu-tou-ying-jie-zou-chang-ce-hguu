@@ -15,5 +15,6 @@ export function workspace(root, role, page) {
   root.replaceChildren(titleBlock(page.module, page.title, page.detail),
     el('div',{class:'work '+page.layout},panel,
       actions.length ? el('section',{class:'actions'},actions.map(x => actionForm(x, refresh))) : null));
+  if (page.extras) page.extras(root, {refresh, request, el, status});
   return refresh();
 }

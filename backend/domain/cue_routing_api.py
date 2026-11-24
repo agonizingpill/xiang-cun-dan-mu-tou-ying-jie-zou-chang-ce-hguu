@@ -6,7 +6,8 @@ from core.db import transaction
 from core.records import scan
 from domain import cue_routing_service as service
 from domain.cue_routing_model import cue_routing
-from domain.cue_routing_schemas import ShareCue, RecordSeparate
+from domain.cue_routing_schemas import (
+    ShareCue, RecordSeparate, ApplyRouting, RoutingCandidates, RoutingEvidence)
 
 router = APIRouter()
 
@@ -14,6 +15,28 @@ router = APIRouter()
 def list_cue_routing(user=Depends(actor)):
     with transaction() as conn:
         return scan(conn, cue_routing)
+
+
+@router.post('/cue_routing/routing-candidates')
+def routing_candidates(data: RoutingCandidates, user=Depends(actor)):
+    with transaction() as conn:
+        return service.routing_candidates(conn, user, data)
+
+
+@router.post('/cue_routing/apply-routing')
+def apply_routing(data: ApplyRouting, user=Depends(actor)):
+    allow(user, ('operator', 'reviewer'))
+    with transaction() as conn:
+        output = service.apply_routing(conn, user, data)
+        if not output.get('replayed'):
+            record(conn, user, 'cue_routing.apply_routing')
+        return output
+
+
+@router.post('/cue_routing/routing-evidence')
+def routing_evidence(data: RoutingEvidence, user=Depends(actor)):
+    with transaction() as conn:
+        return service.routing_evidence(conn, user, data)
 
 
 @router.post('/cue_routing/share-cue')
